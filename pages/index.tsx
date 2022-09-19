@@ -1,5 +1,5 @@
 import type { NextPage } from 'next'
-import ReactFlow, {Background, Controls} from "react-flow-renderer";
+import ReactFlow, { Background, Controls } from 'react-flow-renderer'
 
 const nodes = [
   {
@@ -21,19 +21,21 @@ const nodes = [
     data: { label: 'Output Node' },
     position: { x: 250, y: 250 },
   },
-];
+]
 
 const edges = [
   { id: 'e1-2', source: '1', target: '2' },
   { id: 'e2-3', source: '2', target: '3', animated: true },
-];
+]
 
 const Home: NextPage = () => {
   return (
-    <ReactFlow defaultNodes={nodes} defaultEdges={edges} fitView>
-      <Background />
-      <Controls />
-    </ReactFlow>
+    <div className={'h-screen'}>
+      <ReactFlow defaultNodes={nodes} defaultEdges={edges} fitView>
+        <Background />
+        <Controls />
+      </ReactFlow>
+    </div>
   )
 }
 
