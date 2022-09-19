@@ -47,6 +47,9 @@ jobs:
       - name: Static HTML export
         run: yarn export
 
+        # https://github.blog/2009-12-29-bypassing-jekyll-on-github-pages/
+      - run: touch ./out/.nojekyll
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
