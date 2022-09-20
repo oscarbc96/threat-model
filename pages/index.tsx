@@ -1,212 +1,116 @@
 import type { NextPage } from 'next'
-import ReactFlow, { Background, Controls } from 'react-flow-renderer'
+import ReactFlow, { Background, Controls, MarkerType } from 'react-flow-renderer'
 import { getNameAndLabel, ThreatModel, Node, Edge } from '../lib/threat_model'
 import { parse } from 'yaml'
 import forEach from 'lodash/forEach'
 import map from 'lodash/map'
-import dagre from 'dagre'
+import ReactFlowLayout from '../components/ReactFlowLayout'
 
-const fileContent = `title: (Example) Attack Tree for S3 Bucket with Video Recordings
+const fileContent = `title: Uber hack walkthrough
 
 facts:
-  - wayback: API cache (e.g. Wayback Machine)
-    from:
-      - reality: '#yolosec'
-  - public_bucket: S3 bucket set to public
-    from:
-      - bucket_search: '#yolosec'
-  - subsystem_with_access: Subsystem with access to bucket data
-    from:
-      - compromise_user_creds
+- aws_admin: AWS admin access 
+  from:
+   - thycotic_access:
+     backwards: true
+   - change_mfa
+- vpn_access: (T1133, T1595.001) VPN access
+  from:
+  - mfa_mitm
+  - mfa_fatigue
+- network_share: (T1552.01) Network share containing scripts with hardcoded credentials
+  from:
+  - network_scan
+- thycotic_access: Creds with admin access to Thycotic (PAM)
+  from:
+  - network_share
+- onelogin_access: OneLogin account access
+  from:
+   - thycotic_access:
+     backwards: true
+   - change_mfa
+- get_pass: (T15089.01) How did he get user's password?
+  from:
+  - pass_protected
+- hacker_one_access: Access to HackerOne bug bounty reports
+  from:
+  - use_secrets
+- duo_access: Administrative acces to Duo 2FA management
+  from:
+  - mfa2
+  - thycotic_access:
+    backwards: true
+mitigations:
+- mfa: Employee's account is MFA protected
+  from: 
+  - social_engineer
+- mfa2: Further privelege access might still need MFA
+  from:
+  - use_credentials
+- pass_protected: Employee account is password protected
+  from:
+  - mfa
 
 attacks:
-  - bucket_search: AWS public buckets search
-    from:
-      - disallow_crawling
-  - brute_force: patata
-    from:
-      - private_bucket
-  - phishing:
-    from:
-      - private_bucket
-      - internal_only_bucket:
-        backwards: true
-      - access_control_server_side:
-        backwards: true
-  - ef: Compromise user credentials
-    from:
-      - brute_force
-      - phishing
-  - analyze_web_client: Manually analyze web client for access control misconfig
-    from:
-      - lock_down_acls
-  - compromise_admin_creds: Compromise admin creds
-    from:
-      - phishing
-  - compromise_aws_creds: Compromise AWS admin creds
-    from:
-      - phishing
-  - intercept_2fa: Intercept 2FA
-    from:
-      - 2fa
-  - ssh_to_public_machine: SSH to an accessible machine
-    from:
-      - compromise_admin_creds: '#yolosec'
-      - compromise_aws_creds:
-      - intercept_2fa
-  - lateral_movement_to_machine_with_access: Lateral movement to machine with access to target bucket
-    from:
-      - ip_allowlist_for_ssh
-  - compromise_presigned: Compromise presigned URLs
-    from:
-      - phishing
-  - compromise_quickly: Compromise URL within N time period
-    from:
-      - short_lived_presigning
-  - recon_on_s3: Recon on S3 buckets
-    from:
-      - private_bucket
-      - disallow_bucket_urls:
-        backwards: true
-      - 2fa:
-        backwards: true
-  - find_systems_with_access: Find systems with R/W access to target bucket
-    from:
-      - recon_on_s3: '#yolosec'
-  - exploit_known_vulns: Exploit known 3rd party library vulns
-    from:
-      - find_systems_with_access
-  - buy_0day:
-    from:
-      - vuln_scanning
-  - discover_0day: Manual discovery of 0day
-    from:
-      - vuln_scanning
-  - exploit_vulns: Exploit vulns
-    from:
-      - buy_0day
-      - discover_0day
-  - aws_0day: 0day in AWS multitenant systems
-    from:
-      - ips
-  - supply_chain_backdoor: Supply chain compromise (backdoor)
-    from:
-      - single_tenant_hsm
-
-mitigations:
-  - disallow_crawling: Disallow crawling on site maps
-    from:
-      - reality
-  - private_bucket: Auth required / ACLs (private bucket)
-    from:
-      - reality
-  - lock_down_acls: Lock down web client with creds / ACLs
-    from:
-      - subsystem_with_access
-  - access_control_server_side: Perform all access control server side
-    from:
-      - analyze_web_client
-  - 2fa: 2FA
-    from:
-      - compromise_admin_creds: '#yolosec'
-      - compromise_aws_creds
-  - ip_allowlist_for_ssh: IP allowlist for SSH
-    from:
-      - ssh_to_public_machine
-  - short_lived_presigning: Make URL short lived
-    from:
-      - compromise_presigned
-  - disallow_bucket_urls: Disallow the use of URLs to access buckets
-    from:
-      - compromise_quickly
-  - vuln_scanning: 3rd party library checking / vuln scanning
-    from:
-      - exploit_known_vulns
-  - ips: Exploit prevention / detection
-    from:
-      - exploit_vulns
-  - single_tenant_hsm: Use single tenant AWS HSM
-    from:
-      - aws_0day:
-        implemented: false
-  - internal_only_bucket: No public system has R/W access (internal only)
-    from:
-      - find_systems_with_access
+- social_engineer: (T1566) Social engineer an Uber employee
+  from:
+  - reality
+- mfa_fatigue: (T1621) MFA-prompt fatigue/exhaustion attack and whatsapp message
+  from:
+  - get_pass
+- mfa_mitm: (T1621) MFA MiTM
+  from:
+  - pass_protected
+- network_scan: (T1135) Pivot to internal network and network scan
+  from:
+  - vpn_access
+- use_credentials: (T1078) Re-use found vault credentials
+  from:
+  - thycotic_access
+- use_secrets: Re-use found vault API tokens
+  from:
+  - thycotic_access
+- change_mfa: Change MFA settings
+  from:
+  - duo_access
 
 goals:
-  - patata: alsndfl
-    from:
-      - public_bucket
-  - s3_asset: Access video recordings in S3 bucket (attackers win)
-    from:
-      - wayback: '#yolosec'
-      - public_bucket
-      - subsystem_with_access
-      - analyze_web_client
-      - lateral_movement_to_machine_with_access
-      - compromise_presigned
-      - compromise_quickly
-      - exploit_vulns
-      - aws_0day
-      - supply_chain_backdoor
-`
+- hack_uber: Uber fully compromised
+  from:
+  - aws_admin
+  - onelogin_access
+  - hacker_one_access`
+
 const position = { x: 0, y: 0 }
 
-const dagreGraph = new dagre.graphlib.Graph()
-dagreGraph.setDefaultEdgeLabel(() => ({}))
-
-const nodeWidth = 172
-const nodeHeight = 36
-
-const getLayoutedElements = (nodes, edges, direction = 'TB') => {
-  const isHorizontal = direction === 'LR'
-  dagreGraph.setGraph({ rankdir: direction })
-
-  nodes.forEach((node) => {
-    dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight })
-  })
-
-  edges.forEach((edge) => {
-    dagreGraph.setEdge(edge.source, edge.target)
-  })
-
-  dagre.layout(dagreGraph)
-
-  nodes.forEach((node) => {
-    const nodeWithPosition = dagreGraph.node(node.id)
-    node.targetPosition = isHorizontal ? 'left' : 'top'
-    node.sourcePosition = isHorizontal ? 'right' : 'bottom'
-
-    // We are shifting the dagre node position (anchor=center center) to the top left
-    // so it matches the React Flow node anchor point (top left).
-    node.position = {
-      x: nodeWithPosition.x - nodeWidth / 2,
-      y: nodeWithPosition.y - nodeHeight / 2,
-    }
-
-    return node
-  })
-
-  return { nodes, edges }
+const toFlowNode = (n: Node, style: any) => {
+  const [name, label] = getNameAndLabel(n)
+  return {
+    id: name,
+    type: 'default',
+    data: { label },
+    position,
+    style,
+  }
 }
 
 const Home: NextPage = () => {
   const parsedYml = parse(fileContent) as ThreatModel
-  const allNodes = [
-    ...parsedYml.facts,
-    ...parsedYml.attacks,
-    ...parsedYml.mitigations,
-    ...parsedYml.goals,
-  ]
-  const initialNodes = map(allNodes, (n: Node) => {
-    const [name, label] = getNameAndLabel(n)
-    return {
-      id: name,
+
+  const allNodes = [...parsedYml.facts, ...parsedYml.attacks, ...parsedYml.mitigations, ...parsedYml.goals]
+
+  const initialNodes = [
+    {
+      id: 'reality',
       type: 'default',
-      data: { label },
+      data: { label: 'reality' },
       position,
-    }
-  })
+    },
+    ...map(parsedYml.facts, (n: Node) => toFlowNode(n, { background: '#d2d5dd', border: 0 })),
+    ...map(parsedYml.attacks, (n: Node) => toFlowNode(n, { background: '#ff92cc', border: 0 })),
+    ...map(parsedYml.mitigations, (n: Node) => toFlowNode(n, { background: '#b9d6f2', border: 0 })),
+    ...map(parsedYml.goals, (n: Node) => toFlowNode(n, { background: '#5f00c2', color: '#ffffff', border: 0 })),
+  ]
   const initialEdges = []
 
   forEach(allNodes, (destinationNode: Node) => {
@@ -217,7 +121,12 @@ const Home: NextPage = () => {
           id: `${sourceNode}-${destinationName}`,
           source: sourceNode,
           target: destinationName,
-          type: 'simplebezier',
+          type: 'default',
+          style: { stroke: 'black' },
+          markerEnd: { type: MarkerType.Arrow, color: 'black' },
+          labelBgPadding: [8, 4],
+          labelBgBorderRadius: 4,
+          labelBgStyle: { fill: '#FFCC00', color: '#fff', opacity: '0.7' },
         })
       } else {
         const [sourceName, sourceLabel] = getNameAndLabel(sourceNode)
@@ -226,29 +135,38 @@ const Home: NextPage = () => {
             id: `${destinationName}-${sourceName}`,
             source: destinationName,
             target: sourceName,
-            type: 'simplebezier',
+            type: 'default',
             label: sourceLabel,
+            style: { stroke: 'blue', strokeDasharray: '4' },
+            markerEnd: { type: MarkerType.Arrow, color: 'blue' },
+            labelBgPadding: [8, 4],
+            labelBgBorderRadius: 4,
+            labelBgStyle: { fill: '#FFCC00', color: '#fff', opacity: '0.7' },
           })
         } else {
           initialEdges.push({
             id: `${sourceName}-${destinationName}`,
             source: sourceName,
             target: destinationName,
-            type: 'simplebezier',
+            type: 'default',
+            style: { stroke: 'black' },
             label: sourceLabel,
+            markerEnd: { type: MarkerType.Arrow, color: 'black' },
+            labelBgPadding: [8, 4],
+            labelBgBorderRadius: 4,
+            labelBgStyle: { fill: '#FFCC00', color: '#fff', opacity: '0.7' },
           })
         }
       }
     })
   })
 
-  const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(initialNodes, initialEdges)
-
   return (
     <div className={'h-screen'}>
-      <ReactFlow nodes={layoutedNodes} edges={layoutedEdges} fitView>
+      <ReactFlow defaultNodes={initialNodes} defaultEdges={initialEdges}>
         <Background />
         <Controls />
+        <ReactFlowLayout />
       </ReactFlow>
     </div>
   )

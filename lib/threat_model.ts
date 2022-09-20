@@ -14,10 +14,10 @@ export const getNameAndLabel = (obj: Edge | Node): [string, string?] => {
   const cleanObj: ExactlyOneKey<string, string> = omit(obj, ['from', 'backwards', 'implemented'])
   const pairs: [string, string][] = toPairs(cleanObj)
   if (pairs.length != 1) {
-    console.log(pairs)
     throw new Error('Something went wrong')
   }
-  return pairs[0]
+  if (pairs[0][1]) return pairs[0]
+  return [pairs[0][0], pairs[0][0]]
 }
 
 export interface ThreatModel {
