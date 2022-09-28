@@ -4,7 +4,8 @@ import { getNameAndLabel, ThreatModel, Node, Edge } from '../lib/threat_model'
 import { parse } from 'yaml'
 import forEach from 'lodash/forEach'
 import map from 'lodash/map'
-import ReactFlowLayout from '../components/ReactFlowLayout'
+import ReactFlowLayout from '../components/react-flow/ReactFlowLayout'
+import FloatingEdge from "../components/react-flow/FloatingEdge";
 
 const fileContent = `title: Uber hack walkthrough
 
@@ -121,7 +122,7 @@ const Home: NextPage = () => {
           id: `${sourceNode}-${destinationName}`,
           source: sourceNode,
           target: destinationName,
-          type: 'default',
+          type: 'floating',
           style: { stroke: 'black' },
           markerEnd: { type: MarkerType.Arrow, color: 'black' },
           labelBgPadding: [8, 4],
@@ -135,7 +136,7 @@ const Home: NextPage = () => {
             id: `${destinationName}-${sourceName}`,
             source: destinationName,
             target: sourceName,
-            type: 'default',
+            type: 'floating',
             label: sourceLabel,
             style: { stroke: 'blue', strokeDasharray: '4' },
             markerEnd: { type: MarkerType.Arrow, color: 'blue' },
@@ -148,7 +149,7 @@ const Home: NextPage = () => {
             id: `${sourceName}-${destinationName}`,
             source: sourceName,
             target: destinationName,
-            type: 'default',
+            type: 'floating',
             style: { stroke: 'black' },
             label: sourceLabel,
             markerEnd: { type: MarkerType.Arrow, color: 'black' },
@@ -161,9 +162,13 @@ const Home: NextPage = () => {
     })
   })
 
+  const edgeTypes = {
+  floating: FloatingEdge,
+};
+
   return (
     <div className={'h-screen'}>
-      <ReactFlow defaultNodes={initialNodes} defaultEdges={initialEdges}>
+      <ReactFlow edgeTypes={edgeTypes} defaultNodes={initialNodes} defaultEdges={initialEdges}>
         <Background />
         <Controls />
         <ReactFlowLayout />
