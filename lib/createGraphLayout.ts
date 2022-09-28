@@ -14,7 +14,7 @@ const DEFAULT_WIDTH_FOR_ROOT = 170
 const elk = new Elk({
   defaultLayoutOptions: {
     'elk.algorithm': 'layered',
-    'elk.direction': 'RIGHT',
+    'elk.direction': 'DOWN',
     'elk.layered.mergeEdges': 'true',
     'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
     'elk.layered.spacing.nodeNodeBetweenLayers': '40',
