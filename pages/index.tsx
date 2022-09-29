@@ -1,6 +1,6 @@
 import type { NextPage } from 'next'
-import ReactFlow, { Background, Controls, MarkerType } from 'react-flow-renderer'
-import { getNameAndLabel, ThreatModel, Node, Edge } from '../lib/threat_model'
+import ReactFlow, {Background, Controls, Edge, MarkerType} from 'react-flow-renderer'
+import { getNameAndLabel, ThreatModel, Node, Edge as EdgeTM } from '../lib/threat_model'
 import { parse } from 'yaml'
 import forEach from 'lodash/forEach'
 import map from 'lodash/map'
@@ -111,15 +111,15 @@ const Home: NextPage = () => {
     ...map(parsedYml.mitigations, (n: Node) => toFlowNode(n, { background: '#b9d6f2', border: 0 })),
     ...map(parsedYml.goals, (n: Node) => toFlowNode(n, { background: '#5f00c2', color: '#ffffff', border: 0 })),
   ]
-  const initialEdges = []
+  const initialEdges: Array<Edge> = []
 
   forEach(allNodes, (destinationNode: Node) => {
     const [destinationName] = getNameAndLabel(destinationNode)
-    forEach(destinationNode.from, (sourceNode: Edge | string) => {
+    forEach(destinationNode.from, (sourceNode: EdgeTM | string) => {
       if (typeof sourceNode === 'string' || sourceNode instanceof String) {
         initialEdges.push({
           id: `${sourceNode}-${destinationName}`,
-          source: sourceNode,
+          source: sourceNode as string,
           target: destinationName,
           type: 'default',
           style: { stroke: 'black' },

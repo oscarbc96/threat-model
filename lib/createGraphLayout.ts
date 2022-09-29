@@ -1,4 +1,4 @@
-import Elk, { ElkNode } from 'elkjs'
+import Elk, { ElkExtendedEdge, ElkNode, ElkPrimitiveEdge } from 'elkjs'
 import { Node, Edge } from 'react-flow-renderer'
 
 /* From https://github.com/wbkd/react-flow/issues/5#issuecomment-954001434 */
@@ -27,7 +27,7 @@ const elk = new Elk({
 
 const createGraphLayout = async (nodes: Array<Node>, edges: Array<Edge>): Promise<Array<Node>> => {
   const elkNodes: ElkNode[] = []
-  const elkEdges: ElkPrimitiveEdge[] = []
+  const elkEdges: ElkExtendedEdge[] = []
 
   nodes.forEach((flowNode) => {
     elkNodes.push({
@@ -39,8 +39,8 @@ const createGraphLayout = async (nodes: Array<Node>, edges: Array<Edge>): Promis
   edges.forEach((flowEdge) => {
     elkEdges.push({
       id: flowEdge.id,
-      source: flowEdge.source,
-      target: flowEdge.target,
+      sources: [flowEdge.source],
+      targets: [flowEdge.target],
     })
   })
 
