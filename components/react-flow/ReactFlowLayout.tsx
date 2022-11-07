@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useReactFlow } from 'react-flow-renderer'
-import createGraphLayout from '../lib/createGraphLayout'
+import createGraphLayout from '../../lib/createGraphLayout'
 
 const ReactFlowLayout = () => {
   const { getNodes, getEdges, setNodes, setEdges, fitView, viewportInitialized } = useReactFlow()
